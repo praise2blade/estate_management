@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Visitor History</h2>
+
+    <!-- Filter Section -->
+    <div class="flex space-x-4 mb-6">
+        <div class="w-1/3">
+            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+            <input type="text" id="search" name="search" placeholder="Search by name, phone..." value="{{ request.GET.search }}"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+
+        <div class="w-1/3">
+            <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
+            <input type="date" id="start_date" name="start_date" value="{{ request.GET.start_date }}"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+
+        <div class="w-1/3">
+            <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
+            <input type="date" id="end_date" name="end_date" value="{{ request.GET.end_date }}"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+
+        <button type="submit" class="self-end mt-6 px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700">Filter</button>
+    </div>
+
+    <div class="overflow-x-auto bg-white rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resident</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires At</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for visitor in page_obj %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm text-gray-800">{{ visitor.visitor_name }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">{{ visitor.phone_number }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">{{ visitor.purpose }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">{{ visitor.resident.get_full_name }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium
+                            {% if visitor.status == 'approved' %} bg-green-100 text-green-800
+                            {% elif visitor.status == 'pending' %} bg-yellow-100 text-yellow-800
+                            {% elif visitor.status == 'checked-in' %} bg-blue-100 text-blue-800
+                            {% elif visitor.status == 'checked-out' %} bg-gray-200 text-gray-800
+                            {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                            {{ visitor.status|title }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-800">{{ visitor.unique_code }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">{{ visitor.created_at|date:"M d, Y H:i" }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">{{ visitor.expires_at|date:"M d, Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="px-4 py-4 text-center text-gray-600">No visitor records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="mt-4 flex justify-between items-center">
+        <div class="text-sm text-gray-600">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+        </div>
+
+        <div class="flex space-x-2">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&search={{ request.GET.search }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
+                class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-100">Previous</a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="px-3 py-1 border rounded bg-blue-600 text-white">{{ num }}</span>
+                {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                    <a href="?page={{ num }}&search={{ request.GET.search }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
+                        class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-100">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&search={{ request.GET.search }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
+                class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-100">Next</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

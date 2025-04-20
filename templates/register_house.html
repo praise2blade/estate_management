@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Register New House</h2>
+
+<form method="post" class="space-y-4 bg-white p-6 rounded shadow">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div>
+        <label class="font-semibold">House Number</label>
+        {{ form.number }}
+    </div>
+
+    <div>
+        <label class="font-semibold">Street</label>
+        {{ form.street }}
+    </div>
+
+    <div>
+        <label class="font-semibold">Landlord</label>
+        {{ form.landlord }}
+    </div>
+
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Register House</button>
+</form>
+{% endblock %}

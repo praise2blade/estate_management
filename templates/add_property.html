@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="text-3xl font-bold text-green-600 mb-6">Manage Your Properties</h2>
+
+<!-- Property Registration Form -->
+<form method="POST" action="{% url 'register_property' %}" class="bg-white p-6 shadow-md rounded-lg mb-6">
+    {% csrf_token %}
+    <input type="text" name="address" placeholder="Property Address" class="p-3 border rounded w-full mb-4" required>
+    <input type="number" name="units" placeholder="Number of Units" class="p-3 border rounded w-full mb-4" required>
+    <textarea name="description" placeholder="Property Description" class="p-3 border rounded w-full mb-4" required></textarea>
+    <button type="submit" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition">Add Property</button>
+</form>
+
+<!-- Property List Section -->
+<h3 class="text-2xl font-bold text-gray-700 mb-4">Your Properties</h3>
+<div id="property-list" class="space-y-4">
+    <p class="text-gray-500">Loading properties...</p>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const propertyList = document.getElementById("property-list");
+
+    // Show loading message for properties
+    propertyList.innerHTML = "<p class='text-gray-500'>Loading your properties...</p>";
+
+    // Fetch properties for the landlord
+    fetch("/api/landlord/properties/")
+        .then(response => response.json())
+        .then(data => {
+            propertyList.innerHTML = ""; // Clear loading message
+
+            if (data.properties.length === 0) {
+                propertyList.innerHTML = "<p class='text-gray-500'>No properties found.</p>";
+                return;
+            }
+
+            // Display properties
+            data.properties.forEach(property => {
+                const propertyCard = document.createElement("div");
+                propertyCard.className = "border p-4 rounded-lg shadow-lg bg-white";
+
+                propertyCard.innerHTML = `
+                    <p><strong class="font-semibold">Address:</strong> ${property.address}</p>
+                    <p><strong class="font-semibold">Units:</strong> ${property.units}</p>
+                    <p><strong class="font-semibold">Description:</strong> ${property.description}</p>
+                    <button class="view-tenants-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4" data-id="${property.id}">View Tenants</button>
+                `;
+
+                propertyList.appendChild(propertyCard);
+            });
+
+            // View Tenants Button Handler
+            document.querySelectorAll(".view-tenants-btn").forEach(button => {
+                button.addEventListener("click", function () {
+                    const propertyId = this.getAttribute("data-id");
+                    window.location.href = `/landlord/property/${propertyId}/tenants/`; // Redirect to property tenants page
+                });
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching properties:", error);
+            propertyList.innerHTML = "<p class='text-red-500'>Failed to load properties. Please try again later.</p>";
+        });
+});
+</script>
+
+{% endblock %}

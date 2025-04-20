@@ -1,0 +1,31 @@
+<h2>Your Dependents</h2>
+
+{% if dependents %}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Relationship</th>
+        <th>Unique Code</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dep in dependents %}
+        <tr>
+          <td>{{ dep.name }}</td>
+          <td>{{ dep.get_dependent_type_display }}</td>
+          <td>{{ dep.unique_code }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>You don't have any dependents yet.</p>
+{% endif %}
+
+<h3>Add New Dependent</h3>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Add Dependent</button>
+</form>

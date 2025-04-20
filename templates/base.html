@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estate Visitor Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex">
+
+    <!-- Sidebar -->
+    <div class="bg-green-600 text-white w-64 min-h-screen p-6 hidden md:block">
+        <div class="mb-8">
+            <a href="{% url 'home' %}"><h1 class="text-2xl font-bold">Estate Management</h1></a>
+        </div>
+
+        <nav class="space-y-4">
+            {% if user.is_authenticated %}
+                {% if user.is_superuser %}
+                    <a href="{% url 'admin_dashboard' %}" class="block hover:underline">Admin Dashboard</a>
+                    <a href="{% url 'raise_visitor_request' %}" class="block hover:underline">Raise Visitor Request</a>
+                    <a href="{% url 'register_resident' %}" class="block hover:underline">Register Resident</a>
+                    <a href="{% url 'register_landlord' %}" class="block hover:underline">Register Landlord</a>
+                    <a href="{% url 'admin_residents_dependents' %}" class="block hover:underline">Resident/Dependent List</a>
+                    <a href="{% url 'register_house' %}" class="block hover:underline">Register House</a>
+                    <a href="{% url 'register_street' %}" class="block hover:underline">Register Street</a>
+                    <a href="{% url 'visitor_history' %}" class="block hover:underline">Visitor History</a>
+                    <a href="{% url 'set_dues' %}" class="text-blue-600 hover:underline">Set Estate Dues</a>            
+                    <a href="{% url 'payment_history' %}" class="text-blue-700 font-semibold">View Payment History</a>
+                {% elif user.role == 'resident' %}
+                    <a href="{% url 'resident_dashboard' %}" class="block hover:underline">Resident Dashboard</a>
+                    <a href="{% url 'raise_visitor_request' %}" class="block hover:underline">Raise Visitor Request</a>
+                    <a href="{% url 'visitor_history' %}" class="block hover:underline">Visitor History</a>
+                    <a href="{% url 'add_dependent' %}" class="block hover:underline">Add Dependent</a>                   
+                    <a href="{% url 'view_dependent' %}" class="block hover:underline">View Dependents</a>
+                    <a href="{% url 'make_payment' %}" class="text-green-700 font-semibold">Make a Payment</a><br>
+                    <a href="{% url 'payment_history' %}" class="text-blue-700 font-semibold">View Payment History</a>
+                {% elif user.role == 'landlord' %}
+                    <a href="{% url 'landlord_dashboard' %}" class="block hover:underline">Landlord Dashboard</a>
+                    <a href="{% url 'visitor_history' %}" class="block hover:underline">Visitor History</a>
+                    <a href="{% url 'make_payment' %}" class="text-green-700 font-semibold">Make a Payment</a><br>
+                    <a href="{% url 'payment_history' %}" class="text-blue-700 font-semibold">View Payment History</a>
+                {% endif %}
+
+                <form method="post" action="{% url 'logout' %}" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-red-600 px-4 py-2 rounded text-white hover:bg-red-700 w-full">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="block hover:underline">Login</a>
+                <a href="{% url 'rules' %}" class="block hover:underline">Estate Rules</a>
+            {% endif %}
+        </nav>
+    </div>
+
+    <div class="min-h-screen flex flex-col">
+        <!-- Navbar -->
+        <header class="bg-blue-600 text-white p-4">
+            <div class="flex items-center justify-between">
+                <a href="{% url 'dashboard' %}" class="font-bold text-xl">Estate Management</a>
+                <div class="flex items-center space-x-4">
+                    <span class="font-semibold">Welcome, {{ user.username }}!</span>
+                    <!-- Display user role badge -->
+                    {% if user.is_staff %}
+                    <span class="bg-green-600 text-white px-3 py-1 rounded-full text-sm">Admin</span>
+                    {% elif user.is_security_guard %}
+                    <span class="bg-orange-600 text-white px-3 py-1 rounded-full text-sm">Security</span>
+                    {% elif user.is_landlord %}
+                    <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">Landlord</span>
+                    {% elif user.is_resident %}
+                    <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-sm">Resident</span>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+    <!-- Main content -->
+    <div class="flex-1 p-8">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <footer class="text-center text-gray-500 text-sm mt-4">
+        Estate Management System — Version {{ APP_VERSION }}
+    </footer>
+    
+</body>
+<script>
+    let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    let notificationSocket = new WebSocket(ws_scheme + '://' + window.location.host + '/ws/notifications/');
+
+    notificationSocket.onmessage = function(e) {
+        let data = JSON.parse(e.data);
+        let message = data['message'];
+        showToast(message);
+    };
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white p-4 rounded shadow';
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+</script>
+</html>

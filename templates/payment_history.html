@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Payment History & Dues Summary</h2>
+
+{% if yearly_summary %}
+  {% for year, data in yearly_summary %}
+    <div class="bg-white shadow rounded-xl p-4 mb-6" aria-labelledby="payment-summary-{{ year }}">
+      <h2 class="text-xl font-bold mb-2" id="payment-summary-{{ year }}">Payment Summary for {{ year }}</h2>
+      
+      <div class="mb-3">
+        <p class="text-sm">Total Annual Due: <strong>₦{{ data.annual_due }}</strong></p>
+        <p class="text-sm">Total Paid: <strong class="text-green-600">₦{{ data.total_paid }}</strong></p>
+        <p class="text-sm">Balance: 
+          {% if data.balance <= 0 %}
+            <strong class="text-green-700">Fully Paid</strong>
+          {% else %}
+            <strong class="text-red-600">₦{{ data.balance }}</strong>
+          {% endif %}
+        </p>
+      </div>
+
+      <table class="w-full table-auto text-sm mt-3 border" aria-labelledby="payment-summary-table-{{ year }}">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="p-2 border" scope="col">Date</th>
+            <th class="p-2 border" scope="col">Amount</th>
+            <th class="p-2 border" scope="col">Months</th>
+            <th class="p-2 border" scope="col">Status</th>
+            <th class="p-2 border" scope="col">Receipt</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in data.payments %}
+          <tr>
+            <td class="p-2 border">{{ payment.payment_date|date:"M d, Y" }}</td>
+            <td class="p-2 border">₦{{ payment.amount }}</td>
+            <td class="p-2 border">{{ payment.months_paid_for }}</td>
+            <td class="p-2 border capitalize">{{ payment.status }}</td>
+            <td class="p-2 border">
+              {% if payment.receipt %}
+                <a href="{{ payment.receipt.url }}" target="_blank" class="text-blue-600 underline" aria-label="View receipt for payment on {{ payment.payment_date|date:'M d, Y' }}">View</a>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex justify-between items-center">
+    <div class="text-sm">
+      {% if yearly_summary.has_previous %}
+        <a href="?page=1" class="text-blue-600" aria-label="Go to the first page">First</a>
+        <a href="?page={{ yearly_summary.previous_page_number }}" class="text-blue-600" aria-label="Go to the previous page">Previous</a>
+      {% endif %}
+      <span>Page {{ yearly_summary.number }} of {{ yearly_summary.paginator.num_pages }}</span>
+      {% if yearly_summary.has_next %}
+        <a href="?page={{ yearly_summary.next_page_number }}" class="text-blue-600" aria-label="Go to the next page">Next</a>
+        <a href="?page={{ yearly_summary.paginator.num_pages }}" class="text-blue-600" aria-label="Go to the last page">Last</a>
+      {% endif %}
+    </div>
+  </div>
+
+{% else %}
+  <p class="text-gray-500">No payment records found.</p>
+{% endif %}
+
+{% endblock %}

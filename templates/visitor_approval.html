@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Visitor Approvals</h2>
+
+{% if visitor_requests %}
+    <div class="space-y-4">
+        {% for request in visitor_requests %}
+        <div class="bg-white p-4 rounded shadow flex justify-between items-center">
+            <div>
+                <p><strong>Visitor:</strong> {{ request.visitor_name }}</p>
+                <p><strong>Purpose:</strong> {{ request.purpose }}</p>
+                <p><strong>Status:</strong> <span class="font-semibold">{{ request.status|capfirst }}</span></p>
+                <p><strong>Resident:</strong> {{ request.resident.username }}</p>
+                <p class="text-sm text-gray-500">Requested: {{ request.created_at|date:"M d, Y H:i" }}</p>
+            </div>
+            <div class="space-x-2">
+                {% if request.status == "pending" %}
+                    <a href="{% url 'approve_visitor' request.id %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Approve</a>
+                    <a href="{% url 'reject_visitor' request.id %}" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Reject</a>
+                {% elif request.status == "approved" %}
+                    <a href="{% url 'checkout_visitor' request.id %}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Check Out</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+<p class="text-gray-600">No pending visitor requests.</p>
+{% endif %}
+
+{% endblock %}

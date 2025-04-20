@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+
+    <h2 class="text-2xl font-bold mb-6">Admin / Security Dashboard</h2>
+
+    <div class="mb-6 flex items-center space-x-4">
+        <form method="get" action="" class="flex items-center space-x-2">
+            <input 
+                type="text" 
+                name="q" 
+                value="{{ query }}" 
+                placeholder="Search by Unique Code" 
+                class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+            <button 
+                type="submit" 
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >Search</button>
+        </form>
+        {% if query %}
+            <a href="{% url 'admin_dashboard' %}" class="text-sm text-red-600 hover:underline">Clear</a>
+        {% endif %}
+    </div>
+
+    <h3 class="text-xl font-semibold mb-4">Visitor Check-in Requests</h3>
+
+    {% if visitor_requests %}
+        <div class="space-y-4">
+            {% for request in visitor_requests %}
+            <div class="bg-white p-4 rounded shadow flex justify-between items-center">
+                <div>
+                    <p><strong>Visitor:</strong> {{ request.visitor_name }}</p>
+                    <p><strong>Purpose:</strong> {{ request.purpose }}</p>
+                    <p><strong>Resident:</strong> {{ request.resident.username }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="font-semibold capitalize">{{ request.status }}</span>
+                    </p>
+                    <p><strong>Unique Code:</strong> 
+                        {% if request.unique_code %}
+                        <span class="font-mono text-green-700">{{ request.unique_code }}</span>
+                        {% else %}
+                            <span class="text-gray-500 italic">N/A</span>
+                        {% endif %}
+                    </p>
+                    <p class="text-sm text-gray-500">Created: {{ request.created_at|date:"M d, Y H:i" }}</p>
+                </div>
+
+                <div class="space-x-2">
+                    {% if request.status == "pending" %}
+                        <a href="{% url 'approve_visitor' request.id %}" 
+                           class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700">Approve</a>
+                        <a href="{% url 'reject_visitor' request.id %}" 
+                           class="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700">Reject</a>
+
+                    {% elif request.status == "approved" %}
+                        <a href="{% url 'checkin_visitor' request.id %}" 
+                           class="bg-yellow-600 text-white px-4 py-1 rounded hover:bg-yellow-700">Check In</a>
+                        <a href="{% url 'checkout_visitor' request.id %}" 
+                           class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700">Check Out</a>
+
+                    {% elif request.status == "checked_in" %}
+                        <a href="{% url 'checkout_visitor' request.id %}" 
+                           class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700">Check Out</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-gray-600">No visitor requests at the moment.</p>
+    {% endif %}
+
+</div>
+{% endblock %}

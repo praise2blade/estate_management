@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Register New Resident</h2>
+
+<form method="post" class="space-y-4 bg-white p-6 rounded shadow">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    {% if form.errors %}
+    <div class="bg-red-100 text-red-700 p-2 mb-4 rounded">
+        {{ form.errors }}
+    </div>
+    {% endif %}
+
+
+    <div>
+        <label class="font-semibold">Username</label>
+        {{ form.username }}
+    </div>
+
+    <div>
+        <label class="font-semibold">Email</label>
+        {{ form.email }}
+    </div>
+
+    <div>
+        <label class="font-semibold">Phone Number</label>
+        {{ form.phone_number }}
+    </div>
+
+    <div>
+        <label class="font-semibold">Password</label>
+        {{ form.password1 }}
+    </div>
+
+    <div>
+        <label class="font-semibold">Confirm Password</label>
+        {{ form.password2 }}
+    </div>
+
+    <div>
+        <label>Landlord</label>
+        {{ form.landlord }}
+    </div>
+
+    <div>
+        <label>House</label>
+        {{ form.house }}
+    </div>
+
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Register Resident</button>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const landlordSelect = document.getElementById('id_landlord');
+    const houseSelect = document.getElementById('id_house');
+
+    if (landlordSelect) {
+        landlordSelect.addEventListener('change', function () {
+            const landlordId = this.value;
+
+            fetch(`/get-houses/?landlord_id=${landlordId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Fetched data:", data);
+                    houseSelect.innerHTML = '<option value="">Select House</option>';
+                    data.forEach(house => {
+                        const option = document.createElement('option');
+                        option.value = house.id;
+                        option.text = `${house.number} - ${house["street__name"]}`;
+                        houseSelect.appendChild(option);
+                    });
+                });
+        });
+    }
+});
+</script>
+{% endblock %}

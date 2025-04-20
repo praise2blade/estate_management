@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">Resident List</h1>
+    
+    <!-- Table for Resident List -->
+    <table class="min-w-full bg-white shadow-md rounded-lg">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="py-2 px-4 border-b text-left">Resident Name</th>
+                <th class="py-2 px-4 border-b text-left">House</th>
+                <th class="py-2 px-4 border-b text-left">Dependents</th>
+                {% if user.is_admin or user.is_security %}
+                <th class="py-2 px-4 border-b text-left">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if user.is_resident %}
+                <!-- For Resident, only show their own dependents -->
+                <tr class="hover:bg-gray-50">
+                    <td class="py-2 px-4 border-b">
+                        <p class="font-medium">{{ user.first_name }} {{ user.last_name }}</p>
+                        <p class="text-sm text-gray-500">{{ user.username }}</p>
+                    </td>
+                    <td class="py-2 px-4 border-b">
+                        <p>{{ user.resident_profile.house.number }} - {{ user.resident_profile.house.street.name }}</p>
+                        <p class="text-sm text-gray-500">{{ user.resident_profile.house.street.city }}, {{ user.resident_profile.house.street.state }}</p>
+                    </td>
+                    <td class="py-2 px-4 border-b">
+                        {% if user.dependents.all %}
+                        <ul class="list-disc pl-5">
+                            {% for dependent in user.dependents.all %}
+                            <li>{{ dependent.name }} - {{ dependent.unique_id }} ({{ dependent.relationship|capfirst }})</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>No dependents</p>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <!-- For Admin/Security, show all residents -->
+                {% for resident in residents %}
+                <tr class="hover:bg-gray-50">
+                    <td class="py-2 px-4 border-b">
+                        <p class="font-medium">{{ resident.user.first_name }} {{ resident.user.last_name }}</p>
+                        <p class="text-sm text-gray-500">{{ resident.user.username }}</p>
+                    </td>
+                    <td class="py-2 px-4 border-b">
+                        <p>{{ resident.house.number }} - {{ resident.house.street.name }}</p>
+                        <p class="text-sm text-gray-500">{{ resident.house.street.city }}, {{ resident.house.street.state }}</p>
+                    </td>
+                    <td class="py-2 px-4 border-b">
+                        {% if resident.dependents.all %}
+                        <ul class="list-disc pl-5">
+                            {% for dependent in resident.dependents.all %}
+                            <li>{{ dependent.name }} - {{ dependent.unique_id }} ({{ dependent.relationship|capfirst }})</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>No dependents</p>
+                        {% endif %}
+                    </td>
+                    {% if user.is_admin or user.is_security %}
+                    <td class="py-2 px-4 border-b">
+                        <a href="{% url 'resident_edit' resident.id %}" class="text-blue-500 hover:underline">Edit</a> | 
+                        <a href="{% url 'resident_delete' resident.id %}" class="text-red-500 hover:underline">Delete</a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="py-4 text-center text-gray-500">No residents found</td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Raise Visitor Request</h2>
+
+<form method="post" class="space-y-4 bg-white p-6 rounded shadow">
+    {% csrf_token %}
+
+    <div>
+        <label class="block font-semibold mb-1">Visitor Name</label>
+        {{ form.visitor_name }}
+        {% if form.visitor_name.errors %}
+            <p class="text-red-500 text-sm">{{ form.visitor_name.errors }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        <label class="block font-semibold mb-1">Purpose</label>
+        {{ form.purpose }}
+        {% if form.purpose.errors %}
+            <p class="text-red-500 text-sm">{{ form.purpose.errors }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        <label class="block font-semibold mb-1">Visitor Phone Number</label>
+        {{ form.phone_number }}
+        {% if form.phone_number.errors %}
+            <p class="text-red-500 text-sm">{{ form.phone_number.errors }}</p>
+        {% endif %}
+    </div>
+
+    {{ form.resident }}  {# This will be hidden for residents, visible for admin #}
+
+    <div>
+        <label class="block font-semibold mb-1">Expires At</label>
+        {{ form.expires_at }}
+        {% if form.expires_at.errors %}
+            <p class="text-red-500 text-sm">{{ form.expires_at.errors }}</p>
+        {% endif %}
+    </div>
+
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        Submit Request
+    </button>
+</form>
+{% endblock %}

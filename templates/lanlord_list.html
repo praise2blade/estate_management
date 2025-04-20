@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Landlords List</h2>
+
+{% if landlords %}
+<table class="w-full bg-white rounded shadow">
+    <thead>
+        <tr class="bg-gray-100 text-left">
+            <th class="p-3">Username</th>
+            <th class="p-3">Email</th>
+            <th class="p-3">Phone Number</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for landlord in landlords %}
+        <tr class="border-t">
+            <td class="p-3">{{ landlord.user.username }}</td>
+            <td class="p-3">{{ landlord.user.email }}</td>
+            <td class="p-3">{{ landlord.user.phone_number }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-gray-600">No landlords found.</p>
+{% endif %}
+{% endblock %}

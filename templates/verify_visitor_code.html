@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Verify Visitor Code</h2>
+
+<form method="post" class="space-y-4 bg-white p-6 rounded shadow w-full max-w-md">
+    {% csrf_token %}
+    <div>
+        <label for="code" class="font-semibold">Enter Visitor Code</label>
+        <input type="text" id="code" name="code" class="w-full mt-1 border px-4 py-2 rounded" placeholder="e.g. Y7X2KD9ZB1" required autofocus>
+    </div>
+
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Verify Code</button>
+</form>
+
+{% if result %}
+    <div class="mt-6 bg-gray-100 p-4 rounded shadow">
+        {% if result.valid %}
+            <p class="text-green-700 font-semibold mb-2">✅ Visitor Verified!</p>
+            <p><strong>Visitor:</strong> {{ result.visitor.visitor_name }}</p>
+            <p><strong>Purpose:</strong> {{ result.visitor.purpose }}</p>
+            <p><strong>Resident:</strong> {{ result.visitor.resident.username }}</p>
+            <p><strong>Expires At:</strong> {{ result.visitor.expires_at|date:"M d, Y H:i" }}</p>
+            
+            {% if result.visitor.status == 'checked_in' %}
+                <p class="text-blue-600 mt-4">✅ Visitor has been successfully checked in!</p>
+            {% endif %}
+        {% else %}
+            <p class="text-red-600 font-semibold">❌ {{ result.message }}</p>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

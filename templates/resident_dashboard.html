@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Resident Dashboard</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Pending Requests -->
+        <div class="bg-white p-4 shadow-md rounded-lg">
+            <h2 class="font-semibold text-xl">Pending Requests</h2>
+            {% if pending_requests %}
+                <ul>
+                    {% for request in pending_requests %}
+                        <li class="mb-2">
+                            <strong>{{ request.visitor_name }}</strong> - {{ request.purpose }}
+                            <form method="post" action="{% url 'approve_visitor' request.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-green-500 text-white p-2 rounded">Approve</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No pending requests.</p>
+            {% endif %}
+        </div>
+
+        <!-- Approved Requests -->
+        <div class="bg-white p-4 shadow-md rounded-lg">
+            <h2 class="font-semibold text-xl">Approved Requests</h2>
+            {% if approved_requests %}
+                <ul>
+                    {% for request in approved_requests %}
+                        <li class="mb-2">{{ request.visitor_name }} - {{ request.purpose }} - {{ request.created_at|date:"D M d, Y H:i" }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No approved requests.</p>
+            {% endif %}
+        </div>
+
+        <!-- Checked-in Visitors -->
+        <div class="bg-white p-4 shadow-md rounded-lg">
+            <h2 class="font-semibold text-xl">Checked-In Visitors</h2>
+            {% if checked_in_requests %}
+                <ul>
+                    {% for request in checked_in_requests %}
+                        <li class="mb-2">{{ request.visitor_name }} - {{ request.purpose }} - {{ request.created_at|date:"D M d, Y H:i" }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No visitors checked in.</p>
+            {% endif %}
+        </div>
+
+        <!-- Checked-out Visitors -->
+        <div class="bg-white p-4 shadow-md rounded-lg">
+            <h2 class="font-semibold text-xl">Checked-Out Visitors</h2>
+            {% if checked_out_requests %}
+                <ul>
+                    {% for request in checked_out_requests %}
+                        <li class="mb-2">{{ request.visitor_name }} - {{ request.purpose }} - {{ request.created_at|date:"D M d, Y H:i" }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No visitors checked out.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
