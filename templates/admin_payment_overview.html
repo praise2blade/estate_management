@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2 class="text-2xl font-bold mb-6">Resident/Landlord Payment Summary - {{ current_year }}</h2>
+
+  <!-- Filter and Search Bar -->
+  <form method="GET" class="mb-6 flex space-x-4">
+    <div>
+      <label for="role" class="block text-sm">Filter by Role</label>
+      <select id="role" name="role" class="form-select">
+        <option value="">All</option>
+        <option value="resident" {% if request.GET.role == 'resident' %}selected{% endif %}>Resident</option>
+        <option value="landlord" {% if request.GET.role == 'landlord' %}selected{% endif %}>Landlord</option>
+      </select>
+    </div>
+    <div>
+      <label for="name" class="block text-sm">Search by Name</label>
+      <input type="text" id="name" name="name" value="{{ request.GET.name }}" class="form-input" placeholder="Enter name">
+    </div>
+    <div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Filter</button>
+    </div>
+  </form>
+
+  <!-- Export Button -->
+  <div class="mb-6">
+    <a href="{% url 'export_payment_summary' %}" class="text-white bg-green-600 px-4 py-2 rounded">Export to Excel</a>
+  </div>
+
+  <!-- Table of Payment Summary -->
+  <table class="w-full table-auto border text-sm bg-white rounded-xl shadow overflow-hidden">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="p-2 border">Full Name</th>
+        <th class="p-2 border">Username</th>
+        <th class="p-2 border">Role</th> <!-- New column for Role -->
+        <th class="p-2 border">Code</th> <!-- Code column -->
+        <th class="p-2 border">Annual Due (₦)</th>
+        <th class="p-2 border">Amount Paid (₦)</th>
+        <th class="p-2 border">Arrears (₦)</th>
+        <th class="p-2 border">Status</th>
+        <th class="p-2 border">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in summaries %}
+        <tr class="text-center">
+          <td class="p-2 border">{{ item.user.get_full_name }}</td>
+          <td class="p-2 border">{{ item.user.username }}</td> <!-- Show the username -->
+          <td class="p-2 border">
+            {% if item.user.is_landlord %}
+              Landlord
+            {% elif item.user.is_resident %}
+              Resident
+            {% else %}
+              Unknown
+            {% endif %}
+          </td> <!-- Show the role (Landlord or Resident) -->
+          <td class="p-2 border">
+            {% if item.user.resident_profile %}
+              {{ item.user.resident_profile.unique_code }}  <!-- Access unique_code via resident_profile -->
+            {% else %}
+              N/A  <!-- Display N/A for landlords -->
+            {% endif %}
+          </td>
+          <td class="p-2 border">{{ item.annual_due }}</td>
+          <td class="p-2 border text-green-700">{{ item.total_paid }}</td>
+          <td class="p-2 border {% if item.arrears > 0 %}text-red-600{% endif %}">{{ item.arrears }}</td>
+          <td class="p-2 border {% if item.arrears == 0 %}text-green-700{% else %}text-red-600{% endif %}">
+            {% if item.arrears == 0 %}
+              Fully Paid
+            {% else %}
+              Arrears
+            {% endif %}
+          </td>
+          <td class="p-2 border">
+            <a href="{% url 'admin_resident_payment_history' item.user.id %}" class="text-blue-600 underline">
+              View Details
+            </a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9" class="p-4 text-center text-gray-500">No residents/landlords found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}

@@ -24,9 +24,11 @@
                     <a href="{% url 'admin_residents_dependents' %}" class="block hover:underline">Resident/Dependent List</a>
                     <a href="{% url 'register_house' %}" class="block hover:underline">Register House</a>
                     <a href="{% url 'register_street' %}" class="block hover:underline">Register Street</a>
+                    <a href="{% url 'landlord_list' %}" class="block hover:underline">Landlord list</a>
+                    <a href="{% url 'review_payments' %}" class="block hover:underline">Payments Review</a>
                     <a href="{% url 'visitor_history' %}" class="block hover:underline">Visitor History</a>
                     <a href="{% url 'set_dues' %}" class="text-blue-600 hover:underline">Set Estate Dues</a>            
-                    <a href="{% url 'payment_history' %}" class="text-blue-700 font-semibold">View Payment History</a>
+                    <a href="{% url 'admin_payment_summary_overview' %}" class="block hover:underline">Manage Payments</a>
                 {% elif user.role == 'resident' %}
                     <a href="{% url 'resident_dashboard' %}" class="block hover:underline">Resident Dashboard</a>
                     <a href="{% url 'raise_visitor_request' %}" class="block hover:underline">Raise Visitor Request</a>
@@ -83,7 +85,7 @@
     <footer class="text-center text-gray-500 text-sm mt-4">
         Estate Management System — Version {{ APP_VERSION }}
         <br> &copy; 2025 SoftEdge sub division of Praisetent information Technology. All rights reserved.
-        <br> Developed by SoftEdge Team        
+        <br> Developed by Tinuoye Olabisi, Ekunrere Tinuoye, Olajumoke Tinuoye and Zion Tinuoye.        
     </footer>
     
 </body>

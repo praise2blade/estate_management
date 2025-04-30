@@ -1,8 +1,9 @@
 from django.urls import path, include
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.views import LoginView
 from visitors import views
-from visitors.views import set_dues, view_dependent
+from visitors.views import set_dues, view_dependent, admin_resident_payment_history
 
 urlpatterns = [
     # Admin site# API Endpoints (inside urls.py)
@@ -58,12 +59,18 @@ urlpatterns = [
     path('api/visitor-requests/', views.visitor_requests_api, name='visitor_requests_api'),
     path('api/residents/', views.residents_api, name='residents_api'),
     path('api/landlords/', views.landlords_api, name='landlords_api'),
+    path('api/login/', LoginView.as_view(), name="login"),
 
     # Payments
     path('make-payment/', views.make_payment, name='make_payment'),
     path('payment-history/', views.payment_history, name='payment_history'),
+    path('Manage-payment/', views.admin_payment_summary_overview, name='admin_payment_summary_overview'),
+    path('admin-resident-payment-history/<int:user_id>/', views.admin_resident_payment_history, name='admin_resident_payment_history'),
     path('set-dues/', set_dues, name='set_dues'),
-
+    path('review-payments/', views.review_payments, name='review_payments'),
+    path('update-payment/<int:payment_id>/<str:action>/', views.update_payment_status, name='update_payment_status'),
+    path('export-payment-summary/', views.export_payment_summary, name='export_payment_summary'),
+    
     # dependents
     path('resident-dependents/', views.resident_dependents, name='resident_dependents'),
     path('admin-residents-dependents/', views.admin_residents_and_dependents, name='admin_residents_dependents'),

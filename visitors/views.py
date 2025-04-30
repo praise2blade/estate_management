@@ -3,7 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import admin
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
-from django.http import JsonResponse, HttpResponseForbidden
+from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse, Http404
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from openpyxl import Workbook
 from django.core.paginator import Paginator
 from django.views.generic import ListView
 from django.conf import settings
@@ -12,6 +19,7 @@ from django.db import models
 from .models import User, Landlord, Resident, House, Street, VisitorRequest, Dues, Payment, Dependent
 from .forms import CustomUserCreationForm, LandlordCreationForm, HouseForm, StreetForm, DuesForm, DependentForm
 from datetime import timedelta
+from django.utils.timezone import now
 from django.utils import timezone
 from collections import defaultdict
 import random
@@ -27,6 +35,24 @@ from .utils import generate_unique_code, send_sms
 
 
 channel_layer = get_channel_layer()
+
+
+
+class LoginView(APIView):
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            # Generate token (using JWT or session)
+            refresh = RefreshToken.for_user(user)  # If you're using JWT
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token)
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 def home(request):
     return render(request, 'home.html')
@@ -86,20 +112,24 @@ class CustomLoginView(auth_views.LoginView):
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ['user', 'amount', 'months_paid_for', 'payment_date', 'status', 'receipt']
-    list_filter = ['status']
-    actions = ['approve_payment', 'reject_payment']
+    list_filter = ['status']  # Filters for payment status
+    actions = ['approve_payment', 'reject_payment']  # Custom actions to approve/reject payments
 
     def approve_payment(self, request, queryset):
+        # Update selected payments' status to 'approved'
         queryset.update(status='approved')
         self.message_user(request, "Selected payments have been approved.")
 
     def reject_payment(self, request, queryset):
+        # Update selected payments' status to 'rejected'
         queryset.update(status='rejected')
         self.message_user(request, "Selected payments have been rejected.")
 
-admin.site.register(Payment, PaymentAdmin)
 
-from django.db.models import Q
+
+
+
+from django.db.models import Q, Sum
 
 @login_required
 def admin_dashboard(request):
@@ -222,12 +252,16 @@ def resident_list(request):
     residents = Resident.objects.all()
     return render(request, 'resident_list.html', {'residents': residents})
 
-@login_required
+@login_required 
 def landlord_list(request):
     if not request.user.is_staff:
         raise PermissionDenied()
 
     landlords = Landlord.objects.all()
+    print(f"Landlord count: {landlords.count()}")
+    for l in landlords:
+        print(f"Landlord: {l.user.username}, Email: {l.user.email}, Phone: {l.user.phone_number}")
+
     return render(request, 'landlord_list.html', {'landlords': landlords})
 
 from django.core.paginator import Paginator
@@ -709,6 +743,154 @@ def set_dues(request):
 
     return render(request, 'set_dues.html', {'form': form, 'current_dues': current_dues})
 
+@login_required
+def review_payments(request):
+    pending_payments = Payment.objects.filter(status='pending').order_by('-payment_date')
+    return render(request, 'review_payments.html', {'pending_payments': pending_payments})
+
+
+@login_required
+def update_payment_status(request, payment_id, action):
+    payment = get_object_or_404(Payment, id=payment_id)
+
+    if action not in ['approve', 'reject']:
+        messages.error(request, "Invalid action.")
+        return redirect('review_payments')
+
+    payment.status = 'approved' if action == 'approve' else 'rejected'
+    payment.save()
+
+    messages.success(request, f"Payment has been {payment.status}.")
+    return redirect('review_payments')
+
+@login_required
+def admin_payment_summary_overview(request):
+    if not request.user.is_staff:
+        raise PermissionDenied()
+
+    # Handle Search and Filter
+    filter_role = request.GET.get('role', None)
+    filter_name = request.GET.get('name', '')
+
+    users = get_user_model().objects.filter(role__in=['resident', 'landlord'])
+
+    if filter_role:
+        users = users.filter(role=filter_role)
+
+    if filter_name:
+        users = users.filter(username__icontains=filter_name)
+
+    current_dues = Dues.objects.filter(is_active=True).first()
+    current_year = now().year
+    summaries = []
+
+    for user in users:
+        # Determine annual due
+        if user.role == 'resident':
+            annual_due = current_dues.resident_due * 12
+        elif user.role == 'landlord':
+            annual_due = current_dues.landlord_due * 12
+        else:
+            annual_due = 0
+
+        # Get payments for this year
+        total_paid = Payment.objects.filter(
+            user=user,
+            status='approved',
+            year=current_year
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        balance = annual_due - total_paid
+
+        summaries.append({
+            'user': user,
+            'annual_due': annual_due,
+            'total_paid': total_paid,
+            'arrears': max(balance, 0),
+        })
+
+    return render(request, 'admin_payment_overview.html', {
+        'summaries': summaries,
+        'current_year': current_year,
+    })
+
+# Excel Export
+@login_required
+def export_payment_summary(request):
+    if not request.user.is_staff:
+        raise PermissionDenied()
+
+    users = get_user_model().objects.filter(role__in=['resident', 'landlord'])
+    current_dues = Dues.objects.filter(is_active=True).first()
+    current_year = now().year
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Payment Summary"
+    
+    # Adding Headers to the Excel File
+    ws.append(['Full Name', 'unique_code', 'Role', 'Annual Due (₦)', 'Amount Paid (₦)', 'Arrears (₦)', 'Status'])
+
+    for user in users:
+        if user.role == 'resident':
+            annual_due = current_dues.resident_due * 12
+        elif user.role == 'landlord':
+            annual_due = current_dues.landlord_due * 12
+        else:
+            annual_due = 0
+
+        total_paid = Payment.objects.filter(
+            user=user,
+            status='approved',
+            year=current_year
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        balance = annual_due - total_paid
+        arrears = max(balance, 0)
+
+        ws.append([
+            user.get_full_name,
+            user.resident_profile.unique_code,
+            user.role,
+            annual_due,
+            total_paid,
+            arrears,
+            'Fully Paid' if arrears == 0 else 'Arrears'
+        ])
+
+    # Creating the HttpResponse to download the Excel file
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=payment_summary.xlsx'
+    wb.save(response)
+
+    return response
+
+@login_required
+@login_required
+def admin_resident_payment_history(request, user_id):
+    if not request.user.is_staff:
+        raise PermissionDenied()
+
+    user = get_object_or_404(User, id=user_id)
+
+    if hasattr(user, 'resident_profile'):
+        profile = user.resident_profile
+    elif hasattr(user, 'landlord_profile'):
+        profile = user.landlord_profile
+    else:
+        raise Http404("Selected user has no associated resident or landlord profile.")
+
+    payments = Payment.objects.filter(user=user).order_by('-payment_date')
+    current_dues = Dues.objects.filter(is_active=True).first()
+    current_year = now().year
+
+    return render(request, 'admin_resident_payment_history.html', {
+        'user': user,
+        'profile': profile,  # Can be used to show resident/landlord info
+        'payments': payments,
+        'current_dues': current_dues,
+        'current_year': current_year,
+    })
 
 @login_required
 def add_dependent(request):
